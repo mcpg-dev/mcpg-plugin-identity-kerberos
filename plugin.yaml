@@ -1,0 +1,16 @@
+schema: mcpg.dev/plugin/v1
+id: dev.mcpg.identity.kerberos
+name: Kerberos / SPNEGO Identity Resolver
+license: BUSL-1.1
+description: |
+  Resolves caller identity from `Authorization: Negotiate <b64 GSSAPI token>`
+  (HTTP Negotiate / SPNEGO, RFC 4559) by verifying the token against the
+  gateway's service keytab with MIT GSSAPI `accept_sec_context`, then reading
+  the caller's Kerberos principal as the identity. Verification is a local
+  cryptographic check (the keytab decrypts the service ticket) — no call to
+  the KDC, no outbound network. Builds against the system GSSAPI
+  (libkrb5/libgssapi_krb5).
+class: identity_provider
+runtime: native-cdylib-v1
+protocol_version: "1.0"
+required_capabilities: []
