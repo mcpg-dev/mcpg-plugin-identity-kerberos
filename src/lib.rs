@@ -54,7 +54,7 @@ fn record_resolve_outcome(result: &IdentityResolution, elapsed: std::time::Durat
             "kerberos identity resolved"
         ),
         IdentityResolution::None => debug!("kerberos identity: no Negotiate token — fall through"),
-        IdentityResolution::Invalid { reason } => {
+        IdentityResolution::Invalid { reason, .. } => {
             warn!(reason = %reason, "kerberos identity: rejected")
         }
     }
@@ -155,6 +155,7 @@ impl KerberosIdentityPlugin {
             Err(_) => {
                 return IdentityResolution::Invalid {
                     reason: "malformed Negotiate token (base64)".into(),
+                    response_headers: Vec::new(),
                 };
             }
         };
@@ -166,10 +167,12 @@ impl KerberosIdentityPlugin {
                 warn!(detail = %detail, "kerberos identity: token rejected");
                 IdentityResolution::Invalid {
                     reason: "invalid or expired Kerberos token".into(),
+                    response_headers: Vec::new(),
                 }
             }
             GssResult::Continuation => IdentityResolution::Invalid {
                 reason: "multi-leg negotiation is not supported".into(),
+                response_headers: Vec::new(),
             },
             GssResult::ServerError(detail) => {
                 // Fail closed: an acceptor-side problem (keytab) rejects rather
@@ -177,6 +180,7 @@ impl KerberosIdentityPlugin {
                 warn!(detail = %detail, "kerberos identity: acceptor error; failing closed");
                 IdentityResolution::Invalid {
                     reason: "kerberos acceptor unavailable".into(),
+                    response_headers: Vec::new(),
                 }
             }
         }
@@ -285,7 +289,7 @@ mod tests {
     #[test]
     fn malformed_base64_is_invalid() {
         match plugin().resolve(&negotiate("!!not base64!!")) {
-            IdentityResolution::Invalid { reason } => assert!(reason.contains("base64")),
+            IdentityResolution::Invalid { reason, .. } => assert!(reason.contains("base64")),
             other => panic!("expected Invalid, got {other:?}"),
         }
     }
@@ -296,7 +300,7 @@ mod tests {
         // generic (no-detail) rejection.
         let bogus = BASE64_STANDARD.encode(b"not a real gssapi token");
         match plugin().resolve(&negotiate(&bogus)) {
-            IdentityResolution::Invalid { reason } => assert!(
+            IdentityResolution::Invalid { reason, .. } => assert!(
                 reason == "invalid or expired Kerberos token"
                     || reason == "kerberos acceptor unavailable"
             ),
