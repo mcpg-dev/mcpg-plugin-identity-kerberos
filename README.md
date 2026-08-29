@@ -13,6 +13,21 @@ Part of the legacy → MCP bridge suite.
 > kept **out of `default-members`**, so a plain `cargo build` does not require
 > krb5-dev; build it explicitly with `-p mcpg-plugin-identity-kerberos`.
 
+
+## Platforms
+
+Published for **linux-gnu (amd64, arm64)** and **darwin-arm64** only.
+
+`krb5` (MIT Kerberos) is a native C library, and no musl or Windows build of
+this plugin exists because of it.
+
+This matters at boot rather than at install. A gateway resolves a
+platform-agnostic `oci:` reference to `protocol-<major>-<os>-<arch>` for the
+host it is running on, and its only fallback is `wasi-wasm` — which this plugin
+does not publish either. So on Alpine, on a musl-based image, or on Windows the
+pull does not degrade: it fails, and the gateway does not start. Use a
+glibc-based image, or an Apple-silicon host, when this plugin is in the config.
+
 ## How it works
 
 Per resolve, given `Authorization: Negotiate <b64 SPNEGO/Kerberos token>`
