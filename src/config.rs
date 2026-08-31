@@ -120,10 +120,18 @@ mod tests {
         ));
     }
 
+    /// A real on-disk stand-in for the keytab existence check — the
+    /// test writes it, so it exists in any sandbox the test runs in.
+    fn keytab_stand_in() -> std::path::PathBuf {
+        let path =
+            std::env::temp_dir().join(format!("mcpg-kerberos-test-keytab-{}", std::process::id()));
+        std::fs::write(&path, b"stand-in").expect("write keytab stand-in");
+        path
+    }
+
     #[test]
     fn parses_with_existing_keytab() {
-        // Use a path that exists (this source file) to pass the existence check.
-        let here = concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.toml");
+        let here = keytab_stand_in();
         let cfg = json!({ "keytab": here, "service_name": "HTTP/gw.example.com" }).to_string();
         let parsed = KerberosConfig::parse(&cfg).unwrap();
         assert!(parsed.strip_realm);
@@ -133,7 +141,8 @@ mod tests {
 
     #[test]
     fn rejects_bad_trust_level() {
-        let cfg = json!({ "keytab": concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.toml"), "resolution": { "trust_level": "alien" } }).to_string();
+        let cfg = json!({ "keytab": keytab_stand_in(), "resolution": { "trust_level": "alien" } })
+            .to_string();
         assert!(matches!(
             KerberosConfig::parse(&cfg).unwrap_err(),
             ConfigError::InvalidTrustLevel(_)

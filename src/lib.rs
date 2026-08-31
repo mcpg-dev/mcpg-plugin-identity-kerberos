@@ -265,10 +265,12 @@ mod tests {
     use serde_json::json;
 
     fn plugin() -> KerberosIdentityPlugin {
-        // `keytab` must exist for config validation — point at this source.
-        KerberosIdentityPlugin::from_config_json(
-            &json!({ "keytab": concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.toml") }).to_string(),
-        )
+        // `keytab` must exist for config validation — write a stand-in,
+        // so it exists in any sandbox the test runs in.
+        let keytab =
+            std::env::temp_dir().join(format!("mcpg-kerberos-test-keytab-{}", std::process::id()));
+        std::fs::write(&keytab, b"stand-in").expect("write keytab stand-in");
+        KerberosIdentityPlugin::from_config_json(&json!({ "keytab": keytab }).to_string())
     }
 
     fn negotiate(token_b64: &str) -> Vec<(String, String)> {
