@@ -105,7 +105,7 @@ gateway identity context for downstream policy + audit.
 ```bash
 cargo build -p mcpg-plugin-identity-kerberos          # needs libkrb5-dev
 cargo test  -p mcpg-plugin-identity-kerberos          # unit tests
-# Real-KDC end-to-end (needs krb5-kdc + root to bind the KDC port):
+# Real-KDC end-to-end (needs krb5-kdc + krb5-admin-server; runs as any user):
 cargo test -p mcpg-plugin-identity-kerberos --features integration-tests
 ```
 
